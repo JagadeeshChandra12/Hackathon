@@ -11,6 +11,24 @@ const RC_STORAGE_KEYS = {
   TRIPS: 'rcTrips',
 };
 
+// Demo accounts for easy login in hackathon demos
+const RC_DEMO_USERS = [
+  {
+    name: 'RouteCraft Demo',
+    email: 'demo@routecraft.com',
+    password: 'demo123',
+    homeCity: 'Guntur',
+    travelPreference: 'budget',
+  },
+  {
+    name: 'Navya',
+    email: 'navya@routecraft.com',
+    password: 'navya123',
+    homeCity: 'Vijayawada',
+    travelPreference: 'fast',
+  },
+];
+
 const RC_CITIES = {
   Guntur: { name: 'Guntur', lat: 16.3067, lng: 80.4365, hasMetro: false },
   Vijayawada: { name: 'Vijayawada', lat: 16.5062, lng: 80.648, hasMetro: false },
@@ -162,6 +180,7 @@ function rcRenderNavbarAuth() {
 let rcMapInstance = null;
 let rcMapMarkers = [];
 let rcMapLines = [];
+let rcPendingBooking = null;
 
 function rcInitMap() {
   const mapEl = document.getElementById('rc-map');
@@ -183,15 +202,18 @@ const RC_MODE_COLORS = {
   carpool: '#ec4899',
 };
 
-// Build multi‑modal route options between a city and a landmark destination
-function rcBuildMultiModalRoutes(fromCityKey, destinationKey, preference, user) {
+// Build simple city‑to‑city route options (no intermediate steps)
+function rcBuildMultiModalRoutes(fromCityKey, toCityKey, preference, user) {
   const fromCity = RC_CITIES[fromCityKey];
-  const cityTo = RC_CITIES[destinationKey];
-  if (!fromCity || !cityTo || fromCityKey === destinationKey) return [];
+  const cityTo = RC_CITIES[toCityKey];
+  if (!fromCity || !cityTo || fromCityKey === toCityKey) return [];
 
   const dLat = Math.abs(fromCity.lat - cityTo.lat);
   const dLng = Math.abs(fromCity.lng - cityTo.lng);
-  const approxDistance = Math.max(60, Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 140));
+  const approxDistance = Math.max(
+    60,
+    Math.round(Math.sqrt(dLat * dLat + dLng * dLng) * 140),
+  );
 
   const fmtTime = (mins) => {
     const h = Math.floor(mins / 60);
@@ -201,116 +223,92 @@ function rcBuildMultiModalRoutes(fromCityKey, destinationKey, preference, user) 
     return `${h}h ${m}m`;
   };
 
-  const makeStep = (mode, fromName, toName, fromPoint, toPoint, speedKmH, pricePerKm) => {
-    const distance = approxDistance;
-    const minutes = (distance / speedKmH) * 60;
-    const price = Math.round(distance * pricePerKm);
+  const makeRoute = (mode, speedKmH, pricePerKm) => {
+    const minutes = (approxDistance / speedKmH) * 60;
+    const price = Math.round(approxDistance * pricePerKm);
     return {
+      id: `${fromCityKey}-${toCityKey}-${mode}`,
+      fromKey: fromCityKey,
+      toKey: toCityKey,
+      fromCity: fromCity.name,
+      toCity: cityTo.name,
       mode,
-      label: `${fromName} → ${toName}`,
-      from: fromName,
-      to: toName,
-      fromLat: fromPoint.lat,
-      fromLng: fromPoint.lng,
-      toLat: toPoint.lat,
-      toLng: toPoint.lng,
       durationMinutes: minutes,
       durationLabel: fmtTime(minutes),
       price,
-      color: RC_MODE_COLORS[mode] || '#38bdf8',
+      totalMinutes: minutes,
+      totalDurationLabel: fmtTime(minutes),
+      totalPrice: price,
+      score: 0, // filled later
+      tags: [],
+      primaryMode: mode,
     };
   };
 
-  const cabLastMile = (fromName, fromPoint) =>
-    makeStep('cab', fromName, cityTo.name, fromPoint, cityTo, 40, 9);
-
-  // Mixes
-  const budgetSteps = [
-    makeStep('bus', fromCity.name, `${cityTo.name} Bus Stand`, fromCity, cityTo, 50, 1.5),
-    cabLastMile(`${cityTo.name} Bus Stand`, cityTo),
+  // Core modes for simple routes
+  const routes = [
+    makeRoute('bus', 50, 1.5),
+    makeRoute('train', 70, 1.2),
+    makeRoute('cab', 45, 7.5),
   ];
 
-  const fastSteps = [
-    makeStep('flight', `${fromCity.name} Airport`, `${cityTo.name} Airport`, fromCity, cityTo, 600, 6),
-    cabLastMile(`${cityTo.name} Airport`, cityTo),
-  ];
+  // Scoring + badges
+  const minPrice = Math.min(...routes.map((r) => r.price));
+  const minMinutes = Math.min(...routes.map((r) => r.durationMinutes));
 
-  const luxurySteps = cityTo.hasMetro
-    ? [
-        makeStep('train', `${fromCity.name} Jn.`, `${cityTo.name} Jn.`, fromCity, cityTo, 70, 2),
-        makeStep('metro', `${cityTo.name} Jn.`, `${cityTo.name} Metro`, cityTo, cityTo, 35, 1.2),
-        cabLastMile(`${cityTo.name} Metro`, cityTo),
-      ]
-    : [
-        makeStep('train', `${fromCity.name} Jn.`, `${cityTo.name} Jn.`, fromCity, cityTo, 70, 2),
-        cabLastMile(`${cityTo.name} Jn.`, cityTo),
-      ];
-
-  const carpoolSteps = [
-    makeStep('carpool', `${fromCity.name} Pickup`, `${cityTo.name} Drop`, fromCity, cityTo, 55, 3),
-    cabLastMile(`${cityTo.name} Drop`, cityTo),
-  ];
-
-  const routeDefs = [
-    { id: 'budget', label: 'Budget mix (Bus + Cab)', steps: budgetSteps },
-    { id: 'fast', label: 'Fastest (Flight + Cab)', steps: fastSteps },
-    { id: 'luxury', label: 'Comfort (Train + Metro + Cab)', steps: luxurySteps },
-    { id: 'carpool', label: 'Carpool + Cab', steps: carpoolSteps },
-  ];
-
-  const routes = routeDefs.map((def) => {
-    const totalMinutes = def.steps.reduce((sum, s) => sum + s.durationMinutes, 0);
-    const totalPrice = def.steps.reduce((sum, s) => sum + s.price, 0);
-    const cabSegments = def.steps.filter((s) => s.mode === 'cab').length;
-
+  routes.forEach((r) => {
     let baseScore = 80;
-    if (def.id === 'budget') baseScore += 4;
-    if (def.id === 'fast') baseScore += 8;
-    if (def.id === 'luxury') baseScore += 6;
+    if (r.mode === 'train') baseScore += 8;
+    if (r.mode === 'bus') baseScore += 4;
+    if (r.mode === 'cab') baseScore += 6;
 
-    const score = Math.min(
+    r.score = Math.min(
       99,
-      Math.round(baseScore - totalMinutes / 220 + (12000 - totalPrice) / 900),
+      Math.round(
+        baseScore -
+          r.durationMinutes / 250 +
+          (minPrice * 1.5 - r.price) / 900,
+      ),
     );
 
-    const route = {
-      id: `${fromCityKey}-${cityTo.name}-${def.id}`,
-      fromCity: fromCity.name,
-      toCity: cityTo.name,
-      destinationLabel: cityTo.name,
-      steps: def.steps,
-      totalMinutes,
-      totalDurationLabel: fmtTime(totalMinutes),
-      totalPrice,
-      score,
-      tags: [],
-      primaryMode: def.steps[0]?.mode || 'bus',
-      cabSegments,
-    };
+    if (r.price === minPrice) r.tags.push('💰 Cheapest');
+    if (r.durationMinutes === minMinutes) r.tags.push('⚡ Fastest');
 
-    if (def.id === 'budget') route.tags.push('💰 Cheapest');
-    if (def.id === 'fast') route.tags.push('⚡ Fastest');
-    if (def.id === 'luxury') route.tags.push('✨ Comfort');
-    if (def.id === 'carpool') route.tags.push('🤝 Carpool');
-
-    if (user && user.travelPreference === def.id) {
-      route.tags.push('Best for you');
-      route.personalized = true;
+    // Personalization tag based on user preference and mode
+    if (user) {
+      if (
+        user.travelPreference === PREFERENCES.BUDGET &&
+        r.mode === 'bus'
+      ) {
+        r.tags.push('Best for you');
+        r.personalized = true;
+      } else if (
+        user.travelPreference === PREFERENCES.FAST &&
+        r.mode === 'train'
+      ) {
+        r.tags.push('Best for you');
+        r.personalized = true;
+      } else if (
+        user.travelPreference === PREFERENCES.LUXURY &&
+        r.mode === 'cab'
+      ) {
+        r.tags.push('Best for you');
+        r.personalized = true;
+      }
     }
-
-    return route;
   });
 
   const pref = preference || PREFERENCES.BUDGET;
   routes.sort((a, b) => {
-    if (pref === PREFERENCES.BUDGET && a.totalPrice !== b.totalPrice) {
-      return a.totalPrice - b.totalPrice;
+    if (pref === PREFERENCES.BUDGET && a.price !== b.price) {
+      return a.price - b.price;
     }
-    if (pref === PREFERENCES.FAST && a.totalMinutes !== b.totalMinutes) {
-      return a.totalMinutes - b.totalMinutes;
+    if (pref === PREFERENCES.FAST && a.durationMinutes !== b.durationMinutes) {
+      return a.durationMinutes - b.durationMinutes;
     }
-    if (pref === PREFERENCES.LUXURY && a.cabSegments !== b.cabSegments) {
-      return b.cabSegments - a.cabSegments;
+    if (pref === PREFERENCES.LUXURY) {
+      if (a.mode === 'cab' && b.mode !== 'cab') return -1;
+      if (b.mode === 'cab' && a.mode !== 'cab') return 1;
     }
     return b.score - a.score;
   });
@@ -326,50 +324,40 @@ function rcBuildMultiModalRoutes(fromCityKey, destinationKey, preference, user) 
 }
 
 function rcUpdateMapForRoute(route) {
-  if (!rcMapInstance || !route || !route.steps) return;
+  if (!rcMapInstance || !route) return;
 
   rcMapMarkers.forEach((m) => rcMapInstance.removeLayer(m));
   rcMapMarkers = [];
   rcMapLines.forEach((l) => rcMapInstance.removeLayer(l));
   rcMapLines = [];
 
-  const boundsPoints = [];
-  const markerKeys = new Set();
+  const fromCity =
+    RC_CITIES[route.fromKey] ||
+    Object.values(RC_CITIES).find((c) => c.name === route.fromCity);
+  const toCity =
+    RC_CITIES[route.toKey] ||
+    Object.values(RC_CITIES).find((c) => c.name === route.toCity);
 
-  route.steps.forEach((step) => {
-    const from = [step.fromLat, step.fromLng];
-    const to = [step.toLat, step.toLng];
+  if (!fromCity || !toCity) return;
 
-    boundsPoints.push(from, to);
+  const from = [fromCity.lat, fromCity.lng];
+  const to = [toCity.lat, toCity.lng];
 
-    const keyFrom = `${from[0]}:${from[1]}`;
-    const keyTo = `${to[0]}:${to[1]}`;
+  const fromMarker = L.marker(from).addTo(rcMapInstance);
+  const toMarker = L.marker(to).addTo(rcMapInstance);
+  fromMarker.bindPopup(`Start: ${fromCity.name}`);
+  toMarker.bindPopup(`Destination: ${toCity.name}`);
+  rcMapMarkers.push(fromMarker, toMarker);
 
-    if (!markerKeys.has(keyFrom)) {
-      const marker = L.marker(from).addTo(rcMapInstance);
-      marker.bindPopup(step.from);
-      rcMapMarkers.push(marker);
-      markerKeys.add(keyFrom);
-    }
-    if (!markerKeys.has(keyTo)) {
-      const marker = L.marker(to).addTo(rcMapInstance);
-      marker.bindPopup(step.to);
-      rcMapMarkers.push(marker);
-      markerKeys.add(keyTo);
-    }
+  const line = L.polyline([from, to], {
+    color: '#22c55e',
+    weight: 4,
+    opacity: 0.9,
+  }).addTo(rcMapInstance);
+  rcMapLines.push(line);
 
-    const line = L.polyline([from, to], {
-      color: step.color,
-      weight: 4,
-      opacity: 0.9,
-    }).addTo(rcMapInstance);
-    rcMapLines.push(line);
-  });
-
-  if (boundsPoints.length) {
-    const bounds = L.latLngBounds(boundsPoints);
-    rcMapInstance.fitBounds(bounds, { padding: [40, 40] });
-  }
+  const bounds = L.latLngBounds([from, to]);
+  rcMapInstance.fitBounds(bounds, { padding: [40, 40] });
 }
 
 function rcRenderRoutes(from, to, preference) {
@@ -390,22 +378,13 @@ function rcRenderRoutes(from, to, preference) {
   container.innerHTML = '';
   emptyState.classList.add('d-none');
 
-  filtered.forEach((route, index) => {
-    const transportChain = route.steps
-      .map((s) =>
-        s.mode === 'bus'
-          ? '🚌'
-          : s.mode === 'train'
-          ? '🚆'
-          : s.mode === 'flight'
-          ? '✈️'
-          : s.mode === 'metro'
-          ? '🚇'
-          : s.mode === 'carpool'
-          ? '🚗'
-          : '🚕',
-      )
-      .join('  →  ');
+  filtered.forEach((route) => {
+    const primaryLabel =
+      route.primaryMode === 'bus'
+        ? '🚌 Bus-focused'
+        : route.primaryMode === 'train'
+        ? '🚆 Train-focused'
+        : '🚕 Cab-focused';
 
     const tags = [...(route.tags || [])];
     const scoreWidth = Math.max(55, Math.min(route.score, 100));
@@ -419,7 +398,7 @@ function rcRenderRoutes(from, to, preference) {
         <div class="flex-grow-1">
           <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
             <span class="rc-transport-badge rc-badge-train">
-              ${transportChain}
+              ${primaryLabel}
             </span>
             ${tags
               .map(
@@ -441,41 +420,12 @@ function rcRenderRoutes(from, to, preference) {
                 : ''
             }
           </div>
-          <h6 class="mb-1">${route.fromCity} → ${route.destinationLabel}</h6>
-          <ul class="rc-step-list mb-2">
-            ${route.steps
-              .map(
-                (step, idx) => `
-              <li class="rc-step-item">
-                <div class="rc-step-dot" style="background:${step.color};"></div>
-                ${
-                  idx < route.steps.length - 1
-                    ? '<div class="rc-step-line"></div>'
-                    : ''
-                }
-                <div>
-                  <div class="small"><strong>${step.label}</strong></div>
-                  <div class="small rc-muted">
-                    ${
-                      step.mode === 'bus'
-                        ? '🚌 Bus'
-                        : step.mode === 'train'
-                        ? '🚆 Train'
-                        : step.mode === 'flight'
-                        ? '✈️ Flight'
-                        : step.mode === 'metro'
-                        ? '🚇 Metro'
-                        : step.mode === 'carpool'
-                        ? '🚗 Carpool'
-                        : '🚕 Cab'
-                    }
-                    • ${step.durationLabel} • ₹${step.price}
-                  </div>
-                </div>
-              </li>`,
-              )
-              .join('')}
-          </ul>
+          <h6 class="mb-1">${route.fromCity} → ${route.toCity}</h6>
+          <p class="small rc-muted mb-2">
+            Duration: <strong>${route.totalDurationLabel}</strong>
+            <span class="mx-2">•</span>
+            Price: <strong>₹${route.totalPrice}</strong>
+          </p>
           <div>
             <div class="d-flex justify-content-between align-items-center mb-1">
               <small class="rc-muted">Route score</small>
@@ -512,34 +462,7 @@ function rcRenderRoutes(from, to, preference) {
     if (bookBtn) {
       bookBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const trips = rcGetTrips();
-        trips.unshift({
-          id: route.id + '-' + Date.now(),
-          fromCity: route.fromCity,
-          destinationLabel: route.destinationLabel,
-          preference: pref,
-          totalPrice: route.totalPrice,
-          totalDurationLabel: route.totalDurationLabel,
-          createdAt: new Date().toISOString(),
-          chain: route.steps
-            .map((s) =>
-              s.mode === 'bus'
-                ? '🚌'
-                : s.mode === 'train'
-                ? '🚆'
-                : s.mode === 'flight'
-                ? '✈️'
-                : s.mode === 'metro'
-                ? '🚇'
-                : s.mode === 'carpool'
-                ? '🚗'
-                : '🚕',
-            )
-            .join(' → '),
-        });
-        rcSaveTrips(trips.slice(0, 6)); // keep last 6
-        rcRenderTrips();
-        alert('Trip saved to your dashboard.');
+        rcStartPayment(route, pref);
       });
     }
     container.appendChild(card);
@@ -570,10 +493,10 @@ function rcRenderTrips() {
     const col = document.createElement('div');
     col.className = 'col-12 col-md-6 col-xl-4';
     col.innerHTML = `
-      <div class="card rc-trips-card h-100">
+          <div class="card rc-trips-card h-100">
         <div class="card-body">
           <div class="d-flex justify-content-between align-items-center mb-1">
-            <span class="badge bg-primary-subtle text-primary-emphasis">Saved Trip</span>
+            <span class="badge bg-primary-subtle text-primary-emphasis">Saved booking</span>
             <small class="rc-muted">${trip.preference === 'budget' ? 'Low Budget' : trip.preference === 'fast' ? 'Fast Travel' : 'Luxury / Comfort'}</small>
           </div>
           <h6 class="mb-1">${trip.fromCity} → ${trip.destinationLabel}</h6>
@@ -581,11 +504,61 @@ function rcRenderTrips() {
           <p class="small mb-1">
             <strong>₹${trip.totalPrice}</strong> • ${trip.totalDurationLabel}
           </p>
+          ${trip.bookingId ? `<p class="small rc-muted mb-0">Booking ID: ${trip.bookingId}</p>` : ''}
         </div>
       </div>
     `;
     listEl.appendChild(col);
   });
+}
+
+function rcShowBookingToast(route, bookingId) {
+  const toast = document.getElementById('rc-booking-toast');
+  const text = document.getElementById('rc-booking-text');
+  if (!toast || !text) return;
+
+  text.innerHTML = `
+    Your trip <strong>${route.fromCity} → ${route.destinationLabel}</strong> has been
+    added to your wishlist with booking ID <strong>${bookingId}</strong>.<br/>
+    You can review it anytime in the <strong>My Trips</strong> dashboard.
+  `;
+
+  toast.classList.add('show');
+
+  if (toast._hideTimeout) {
+    clearTimeout(toast._hideTimeout);
+  }
+  toast._hideTimeout = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 6000);
+}
+
+function rcStartPayment(route, preference) {
+  rcPendingBooking = { route, preference };
+  const payCard = document.getElementById('rc-payment');
+  const payRoute = document.getElementById('rc-pay-route');
+  const payAmount = document.getElementById('rc-pay-amount');
+  const status = document.getElementById('rc-pay-status');
+   const qr = document.getElementById('rc-pay-qr');
+
+  if (!payCard || !payRoute || !payAmount || !status) return;
+
+  payCard.classList.remove('d-none');
+  payRoute.textContent = `${route.fromCity} → ${route.destinationLabel}`;
+  payAmount.textContent = `₹${route.totalPrice}`;
+  status.textContent = 'Select a payment method and confirm your booking.';
+
+  if (qr) {
+    qr.classList.add('d-none');
+  }
+
+  // Reset selected method
+  const methods = document.querySelectorAll('input[name="rc-pay-method"]');
+  methods.forEach((m) => {
+    m.checked = false;
+  });
+
+  payCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function rcInitHome() {
@@ -670,31 +643,120 @@ function rcInitHome() {
       planEl.classList.remove('d-none');
       contextEl.textContent = `Based on your home city (${user.homeCity}) and ${best.destinationLabel}.`;
       summaryEl.innerHTML = `
-        Best match: <strong>${best.label}</strong><br />
-        Chain: ${best.steps
-          .map((s) =>
-            s.mode === 'bus'
-              ? '🚌'
-              : s.mode === 'train'
-              ? '🚆'
-              : s.mode === 'flight'
-              ? '✈️'
-              : s.mode === 'metro'
-              ? '🚇'
-              : s.mode === 'carpool'
-              ? '🚗'
-              : '🚕',
-          )
-          .join(' → ')}
+        Best match: <strong>${
+          best.primaryMode === 'bus'
+            ? '🚌 Bus-focused'
+            : best.primaryMode === 'train'
+            ? '🚆 Train-focused'
+            : '🚕 Cab-focused'
+        }</strong><br />
       `;
       metaEl.textContent = `₹${best.totalPrice} • ${best.totalDurationLabel} • Score ${best.score}/100`;
     }
+  }
+
+  // If Explore page pre-filled a route, apply it once
+  const presetRaw = localStorage.getItem('rcPresetRoute');
+  if (presetRaw) {
+    try {
+      const preset = JSON.parse(presetRaw);
+      if (preset.from && preset.to && preset.from !== preset.to) {
+        fromSelect.value = preset.from;
+        toSelect.value = preset.to;
+        if (preset.pref) {
+          currentPref =
+            preset.pref === PREFERENCES.FAST
+              ? PREFERENCES.FAST
+              : preset.pref === PREFERENCES.LUXURY
+              ? PREFERENCES.LUXURY
+              : PREFERENCES.BUDGET;
+          updatePrefButtons();
+        }
+        rcRenderRoutes(fromSelect.value, toSelect.value, currentPref);
+      }
+    } catch {
+      // ignore
+    }
+    localStorage.removeItem('rcPresetRoute');
   }
 
   // If some pre-selected route comes from Explore page in future, we could read it here.
 
   // Load existing trips into dashboard
   rcRenderTrips();
+
+  // Payment handler
+  const payBtn = document.getElementById('rc-pay-btn');
+  const payQr = document.getElementById('rc-pay-qr');
+  const payConfirm = document.getElementById('rc-pay-confirm');
+  const payStatus = document.getElementById('rc-pay-status');
+  if (payBtn && payQr && payConfirm) {
+    payBtn.addEventListener('click', () => {
+      if (!rcPendingBooking) {
+        alert('Pick a route and click "Book This" before paying.');
+        return;
+      }
+      const methodInput = document.querySelector(
+        'input[name="rc-pay-method"]:checked',
+      );
+      if (!methodInput) {
+        alert('Please choose a payment method (Card, UPI, or Wallet).');
+        return;
+      }
+
+      if (payQr) {
+        payQr.classList.remove('d-none');
+      }
+      if (payStatus) {
+        payStatus.textContent =
+          'Scan the QR to simulate payment, then click "Payment Done".';
+      }
+    });
+
+    payConfirm.addEventListener('click', () => {
+      if (!rcPendingBooking) return;
+      const methodInput = document.querySelector(
+        'input[name="rc-pay-method"]:checked',
+      );
+      if (!methodInput) return;
+
+      const { route, preference: pref } = rcPendingBooking;
+      const trips = rcGetTrips();
+      const bookingId = 'RC' + Math.floor(100000 + Math.random() * 900000);
+      const chainLabel =
+        route.mode === 'bus'
+          ? '🚌 Bus'
+          : route.mode === 'train'
+          ? '🚆 Train'
+          : '🚕 Cab';
+      trips.unshift({
+        id: route.id + '-' + Date.now(),
+        fromCity: route.fromCity,
+        destinationLabel: route.toCity,
+        preference: pref,
+        totalPrice: route.totalPrice,
+        totalDurationLabel: route.totalDurationLabel,
+        bookingId,
+        createdAt: new Date().toISOString(),
+        chain: chainLabel,
+      });
+      rcSaveTrips(trips.slice(0, 6));
+      rcRenderTrips();
+
+      if (payStatus) {
+        const label =
+          methodInput.value === 'upi'
+            ? 'UPI'
+            : methodInput.value === 'wallet'
+            ? 'Wallet'
+            : 'Card';
+        payStatus.textContent = `Payment successful via ${label}. Booking ID: ${bookingId}`;
+      }
+
+      rcShowBookingToast(route, bookingId);
+      rcPendingBooking = null;
+    });
+  }
 }
 
 // ===========================
@@ -738,12 +800,34 @@ function rcInitAuth() {
     const password = document.getElementById('rc-login-password').value.trim();
     const user = rcGetUser();
 
-    if (!user || user.email !== email || user.password !== password) {
-      alert('Invalid credentials. Please check your email & password or sign up.');
+    const inputEmail = email.toLowerCase();
+
+    // 1) Check locally created account
+    let loggedInUser = null;
+    if (user) {
+      const storedEmail = (user.email || '').trim().toLowerCase();
+      if (storedEmail === inputEmail && user.password === password) {
+        loggedInUser = user;
+      }
+    }
+
+    // 2) Fallback to demo users
+    if (!loggedInUser) {
+      loggedInUser = RC_DEMO_USERS.find(
+        (u) => u.email === inputEmail && u.password === password,
+      );
+    }
+
+    if (!loggedInUser) {
+      alert(
+        'Invalid credentials. Use your signup details or a demo account (e.g. demo@routecraft.com / demo123).',
+      );
       return;
     }
 
-    alert(`Welcome back, ${user.name}!`);
+    // Persist chosen profile so navbar & personalization work
+    rcSetUser(loggedInUser);
+    alert(`Welcome back, ${loggedInUser.name}!`);
     window.location.href = 'index.html';
   });
 
@@ -760,7 +844,8 @@ function rcInitAuth() {
       return;
     }
 
-    rcSetUser({ name, email, password, homeCity, travelPreference });
+    const normalizedEmail = email.toLowerCase();
+    rcSetUser({ name, email: normalizedEmail, password, homeCity, travelPreference });
     alert('Account created! You can now use RouteCraft.');
     window.location.href = 'index.html';
   });
@@ -771,7 +856,67 @@ function rcInitAuth() {
 // ===========================
 
 function rcInitExplore() {
-  // Currently static. Hook events later if needed.
+  const ideaButtons = document.querySelectorAll('.rc-explore-idea');
+  const modalEl = document.getElementById('rcExploreModal');
+  if (!modalEl || !ideaButtons.length) return;
+
+  const modalTitle = document.getElementById('rc-explore-title');
+  const modalImg = document.getElementById('rc-explore-img');
+  const modalDesc = document.getElementById('rc-explore-desc');
+  const modalSteps = document.getElementById('rc-explore-steps');
+  const modalCost = document.getElementById('rc-explore-cost');
+  const modalDuration = document.getElementById('rc-explore-duration');
+
+  // Bootstrap Modal instance
+  const modal = new bootstrap.Modal(modalEl);
+
+  ideaButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (
+        !modalTitle ||
+        !modalImg ||
+        !modalDesc ||
+        !modalSteps ||
+        !modalCost ||
+        !modalDuration
+      ) {
+        return;
+      }
+
+      const card = btn.closest('.rc-explore-card');
+      const img = card ? card.querySelector('img') : null;
+
+      const title = btn.getAttribute('data-rc-title') || 'Explore idea';
+      const desc =
+        btn.getAttribute('data-rc-desc') ||
+        'A curated multi-modal plan across RouteCraft cities.';
+      const stepsRaw = btn.getAttribute('data-rc-steps') || '';
+      const cost = btn.getAttribute('data-rc-cost') || '—';
+      const duration = btn.getAttribute('data-rc-duration') || '—';
+
+      modalTitle.textContent = title;
+      modalDesc.textContent = desc;
+      if (img && img.src) {
+        modalImg.src = img.src;
+        modalImg.alt = title;
+      }
+
+      // Build steps list
+      modalSteps.innerHTML = '';
+      if (stepsRaw) {
+        stepsRaw.split('|').forEach((stepText) => {
+          const li = document.createElement('li');
+          li.textContent = stepText.trim();
+          modalSteps.appendChild(li);
+        });
+      }
+
+      modalCost.textContent = cost;
+      modalDuration.textContent = duration;
+
+      modal.show();
+    });
+  });
 }
 
 // ===========================

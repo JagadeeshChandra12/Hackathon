@@ -141,7 +141,12 @@
                   Quick escapes from Hyderabad and Chennai with balanced time
                   and cost, perfect for 2–3 day breaks.
                 </p>
-                <button class="btn btn-outline-primary mt-auto">
+                <button
+                  class="btn btn-outline-primary mt-auto rc-explore-idea"
+                  data-rc-from="Hyderabad"
+                  data-rc-to="Chennai"
+                  data-rc-pref="fast"
+                >
                   Explore Route Ideas
                 </button>
               </div>
@@ -165,7 +170,17 @@
                   Curated food trails between Guntur, Vijayawada, and Hyderabad
                   for spice lovers and late-night explorers.
                 </p>
-                <button class="btn btn-outline-primary mt-auto">
+                <button
+                  class="btn btn-outline-primary mt-auto rc-explore-idea"
+                  data-rc-from="Guntur"
+                  data-rc-to="Vijayawada"
+                  data-rc-pref="budget"
+                  data-rc-title="Food Trails"
+                  data-rc-desc="Follow a curated sequence of food streets and local favourites, stitched together with short trains, metro and cabs."
+                  data-rc-steps="🚆 Train: Guntur → Vijayawada|🚇 Metro / local: Station → Food street cluster|🚕 Cab: Late-night ride back to stay"
+                  data-rc-cost="₹800 – ₹1500"
+                  data-rc-duration="1.5–3 hours per loop"
+                >
                   Explore Route Ideas
                 </button>
               </div>
@@ -189,7 +204,17 @@
                   Pilgrimage-inspired routes connecting temple towns with calm,
                   early-morning trains and comfort-focused cabs.
                 </p>
-                <button class="btn btn-outline-primary mt-auto">
+                <button
+                  class="btn btn-outline-primary mt-auto rc-explore-idea"
+                  data-rc-from="Chennai"
+                  data-rc-to="Hyderabad"
+                  data-rc-pref="luxury"
+                  data-rc-title="Spiritual Tours"
+                  data-rc-desc="Temple circuits that balance early-morning trains, calm bus segments and comfortable cabs between shrines."
+                  data-rc-steps="🚆 Train: Chennai → Temple junction|🚌 Bus: Junction → Temple town|🚕 Cab: Temple town → Nearby shrines"
+                  data-rc-cost="₹1800 – ₹2600"
+                  data-rc-duration="Half-day to full-day loops"
+                >
                   Explore Route Ideas
                 </button>
               </div>
@@ -213,7 +238,17 @@
                   Micro-itineraries inside each city: airport to old town,
                   riverfronts, food streets and more.
                 </p>
-                <button class="btn btn-outline-primary mt-auto">
+                <button
+                  class="btn btn-outline-primary mt-auto rc-explore-idea"
+                  data-rc-from="Hyderabad"
+                  data-rc-to="Vijayawada"
+                  data-rc-pref="fast"
+                  data-rc-title="Nightlife Routes"
+                  data-rc-desc="Plan safe late-night movement between riverfronts, rooftop spots and food streets with reliable last-mile cabs."
+                  data-rc-steps="🚇 Metro / local: Central hub → Nightlife cluster|🚕 Cab: Cluster → Late-night food zone|🚕 Cab: Back to hotel / home"
+                  data-rc-cost="₹600 – ₹1400"
+                  data-rc-duration="3–5 hours in-city"
+                >
                   Explore Route Ideas
                 </button>
               </div>
@@ -239,7 +274,17 @@
                   Overnight trains, shared cabs and metros optimized for
                   students and solo travellers across all four cities.
                 </p>
-                <button class="btn btn-outline-primary mt-auto">
+                <button
+                  class="btn btn-outline-primary mt-auto rc-explore-idea"
+                  data-rc-from="Guntur"
+                  data-rc-to="Hyderabad"
+                  data-rc-pref="budget"
+                  data-rc-title="Budget Backpacking"
+                  data-rc-desc="Backpacking-friendly hops that chain overnight trains, shared cabs and metro rides to minimise cost."
+                  data-rc-steps="🚆 Train: Guntur → Hyderabad overnight|🚇 Metro: Station → Hostel area|🚕 Shared cab: Hostel → Key sights"
+                  data-rc-cost="₹900 – ₹1700"
+                  data-rc-duration="Overnight + 1 full day"
+                >
                   Explore Route Ideas
                 </button>
               </div>
@@ -263,7 +308,17 @@
                   Premium flights, business-class trains and curated hotel
                   connections for clients and family trips.
                 </p>
-                <button class="btn btn-outline-primary mt-auto">
+                <button
+                  class="btn btn-outline-primary mt-auto rc-explore-idea"
+                  data-rc-from="Hyderabad"
+                  data-rc-to="Chennai"
+                  data-rc-pref="luxury"
+                  data-rc-title="Luxury Comfort"
+                  data-rc-desc="High-comfort journeys using premium flights or trains with door-to-door cab support and hotel coordination."
+                  data-rc-steps="✈️ Flight: Hyderabad → Chennai|🚕 Cab: Airport → Hotel|🚕 Cab: Hotel → Meetings / city highlights"
+                  data-rc-cost="₹5500 – ₹9000"
+                  data-rc-duration="2–4 hours travel, rest in-city"
+                >
                   Explore Route Ideas
                 </button>
               </div>
@@ -287,7 +342,17 @@
                   Safe, well-connected options focusing on walkability,
                   first/last-mile cabs and metro combinations.
                 </p>
-                <button class="btn btn-outline-primary mt-auto">
+                <button
+                  class="btn btn-outline-primary mt-auto rc-explore-idea"
+                  data-rc-from="Vijayawada"
+                  data-rc-to="Hyderabad"
+                  data-rc-pref="fast"
+                  data-rc-title="Solo Travel"
+                  data-rc-desc="Solo-friendly plans combining clear wayfinding, reliable connections and simple night transfers across cities."
+                  data-rc-steps="🚆 Train: Vijayawada → Hyderabad|🚇 Metro / bus: Station → Hostel / hotel|🚕 Cab: Safe late-night transfers"
+                  data-rc-cost="₹1200 – ₹2200"
+                  data-rc-duration="5–7 hours including in-city moves"
+                >
                   Explore Route Ideas
                 </button>
               </div>
@@ -296,6 +361,65 @@
         </div>
       </div>
     </main>
+
+    <!-- Explore detail modal -->
+    <div
+      class="modal fade rc-explore-modal"
+      id="rcExploreModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title" id="rc-explore-title">Explore idea</h5>
+            <button
+              type="button"
+              class="btn-close btn-close-white"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body pt-2">
+            <img
+              src=""
+              alt=""
+              class="rc-explore-banner mb-3"
+              id="rc-explore-img"
+            />
+            <p class="small rc-muted mb-3" id="rc-explore-desc"></p>
+            <div class="row g-3">
+              <div class="col-md-7">
+                <h6 class="mb-2">Multi-modal plan</h6>
+                <ul class="rc-explore-steps small" id="rc-explore-steps"></ul>
+              </div>
+              <div class="col-md-5">
+                <h6 class="mb-2">Snapshot</h6>
+                <p class="small mb-1">
+                  Estimated cost:
+                  <strong id="rc-explore-cost">—</strong>
+                </p>
+                <p class="small mb-3">
+                  Estimated duration:
+                  <strong id="rc-explore-duration">—</strong>
+                </p>
+                <button
+                  type="button"
+                  class="btn btn-primary w-100"
+                  data-bs-dismiss="modal"
+                >
+                  Start Planning
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer border-0 pt-0 small rc-muted">
+            This is a concept view – use the main planner to experiment with
+            real routes.
+          </div>
+        </div>
+      </div>
+    </div>
 
     <footer class="py-4">
       <div class="container text-center rc-muted small">
