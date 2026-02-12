@@ -274,7 +274,7 @@ function rcBuildMultiModalRoutes(fromCityKey, destinationKey, preference, user) 
     );
 
     const route = {
-      id: `${fromCityKey}-${destination.key}-${def.id}`,
+      id: `${fromCityKey}-${cityTo.name}-${def.id}`,
       fromCity: fromCity.name,
       toCity: cityTo.name,
       destinationLabel: cityTo.name,
