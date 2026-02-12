@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>RouteCraft – Smart Travel Route Planner</title>
+    <meta
+      name="description"
+      content="RouteCraft helps you discover smarter routes with a modern, personalized travel planner experience."
+    />
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous"
+    />
+    <!-- Leaflet CSS -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body data-page="home">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark rc-navbar sticky-top">
+      <div class="container">
+        <a class="navbar-brand" href="index.html">RouteCraft</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#rc-navbar"
+          aria-controls="rc-navbar"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="rc-navbar">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="index.html"
+                >Home</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="explore.html">Explore</a>
+            </li>
+          </ul>
+          <div class="d-flex align-items-center gap-3">
+            <button
+              id="rc-theme-toggle"
+              type="button"
+              class="rc-dark-toggle"
+            >
+              <span id="rc-theme-icon">☀️</span>
+              <span id="rc-theme-label">Light</span>
+            </button>
+            <div id="rc-nav-auth" class="d-flex align-items-center gap-2">
+              <a
+                href="login.html"
+                class="btn btn-sm btn-outline-light px-3"
+              >
+                Log in
+              </a>
+              <a href="login.html" class="btn btn-sm btn-primary px-3">
+                Sign up
+              </a>
+            </div>
+            <div
+              id="rc-nav-user"
+              class="d-none d-flex align-items-center gap-2"
+            >
+              <div class="rc-user-badge">
+                <span>Hi, <span id="rc-nav-username">Explorer</span></span>
+              </div>
+              <button
+                id="rc-logout-btn"
+                class="btn btn-sm btn-outline-light px-3"
+                type="button"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Travel Alerts Ticker -->
+    <div class="rc-ticker-wrapper">
+      <div class="container d-flex align-items-center gap-3">
+        <div class="rc-ticker-title">Travel Updates</div>
+        <div class="flex-grow-1 overflow-hidden">
+          <div class="rc-ticker-track">
+            <span class="rc-ticker-item">
+              🚆
+              <span
+                >New train inaugurated between Vijayawada &amp;
+                Hyderabad</span
+              >
+            </span>
+            <span class="rc-ticker-item">
+              ✈️
+              <span>Special weekend flight discounts now live</span>
+            </span>
+            <span class="rc-ticker-item">
+              🚕
+              <span>Cab fares reduced by 10% this month</span>
+            </span>
+            <span class="rc-ticker-item">
+              🛕
+              <span>Temple tour specials from Guntur &amp; Chennai</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hero & Search -->
+    <section class="rc-hero">
+      <div class="container position-relative">
+        <div class="row align-items-center g-4">
+          <div class="col-lg-6 text-lg-start text-center">
+            <h1 class="rc-hero-heading mb-3">
+              Discover Smarter Routes with RouteCraft
+            </h1>
+            <p class="rc-hero-subtitle mb-3">
+              Plan, explore, and travel better across Guntur, Vijayawada,
+              Hyderabad, and Chennai with a personalized, multi-modal planner.
+            </p>
+            <div class="rc-hero-badges">
+              <span class="rc-hero-badge">Realistic, static demo data</span>
+              <span class="rc-hero-badge">Preference-based routing</span>
+              <span class="rc-hero-badge">Leaflet map visualization</span>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="rc-glass-card-light rc-glass-card">
+              <form id="rc-search-form" class="row g-3">
+                <div class="col-12 col-md-6">
+                  <label class="rc-form-label mb-1" for="rc-from">From City</label>
+                  <select
+                    id="rc-from"
+                    class="form-select form-select-sm"
+                    required
+                  >
+                    <option value="">Select city</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="rc-form-label mb-1" for="rc-to"
+                    >To City</label
+                  >
+                  <select
+                    id="rc-to"
+                    class="form-select form-select-sm"
+                    required
+                  >
+                    <option value="">Select city</option>
+                  </select>
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="rc-form-label mb-1" for="rc-date"
+                    >Travel Date</label
+                  >
+                  <input
+                    type="date"
+                    id="rc-date"
+                    class="form-control form-control-sm"
+                  />
+                </div>
+                <div class="col-12 col-md-6">
+                  <label class="rc-form-label mb-1">Preference</label>
+                  <div class="rc-pill-group">
+                    <button
+                      class="btn btn-light btn-sm rc-pill-btn"
+                      data-rc-pref="budget"
+                      type="button"
+                    >
+                      Low Budget
+                    </button>
+                    <button
+                      class="btn btn-light btn-sm rc-pill-btn"
+                      data-rc-pref="fast"
+                      type="button"
+                    >
+                      Fast Travel
+                    </button>
+                    <button
+                      class="btn btn-light btn-sm rc-pill-btn"
+                      data-rc-pref="luxury"
+                      type="button"
+                    >
+                      Luxury
+                    </button>
+                  </div>
+                </div>
+                <div class="col-12">
+                  <button
+                    type="submit"
+                    class="btn btn-primary w-100 mt-2"
+                  >
+                    Find Smart Routes
+                  </button>
+                  <p class="mt-2 mb-0 rc-muted small">
+                    Multi-modal journeys across Bus, Train, Flight, Cab, Metro
+                    and Carpool, prioritized by your preference.
+                  </p>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personalized Plan -->
+        <div id="rc-personal-plan" class="mt-4 d-none rc-personal-plan">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="rc-personal-pill">👋 My Smart Travel Plan</span>
+                <small class="rc-muted" id="rc-personal-context"></small>
+              </div>
+              <div id="rc-personal-summary" class="small"></div>
+            </div>
+            <div class="text-end small">
+              <div class="rc-muted">Best for you</div>
+              <div id="rc-personal-meta"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Results & Map -->
+        <div
+          class="row rc-results-layout align-items-start mt-5 flex-column flex-lg-row"
+        >
+          <div class="col-lg-6 mb-4 mb-lg-0">
+            <h5 class="mb-3">Your personalized routes</h5>
+            <div
+              id="rc-routes-empty"
+              class="alert alert-secondary small"
+            >
+              Start by selecting a source and destination to see curated
+              routes.
+            </div>
+            <div id="rc-routes"></div>
+          </div>
+          <div class="col-lg-6 rc-map-sticky">
+            <h5 class="mb-3">Route overview</h5>
+            <div id="rc-map"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Featured Destinations (separate from city search) -->
+    <section class="py-4">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">Featured Destinations</h5>
+          <span class="rc-muted small">Popular places across RouteCraft cities</span>
+        </div>
+        <div class="row g-3">
+          <div class="col-12 col-md-3">
+            <div class="card rc-explore-card h-100">
+              <div class="card-body">
+                <h6 class="mb-1">PVP Mall</h6>
+                <p class="rc-muted small mb-1">Vijayawada</p>
+                <span class="badge bg-primary-subtle text-primary-emphasis">Shopping & hangouts</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-3">
+            <div class="card rc-explore-card h-100">
+              <div class="card-body">
+                <h6 class="mb-1">Benz Circle</h6>
+                <p class="rc-muted small mb-1">Vijayawada</p>
+                <span class="badge bg-success-subtle text-success-emphasis">City hub</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-3">
+            <div class="card rc-explore-card h-100">
+              <div class="card-body">
+                <h6 class="mb-1">Charminar</h6>
+                <p class="rc-muted small mb-1">Hyderabad</p>
+                <span class="badge bg-warning-subtle text-warning-emphasis">Heritage</span>
+              </div>
+            </div>
+          </div>
+          <div class="col-12 col-md-3">
+            <div class="card rc-explore-card h-100">
+              <div class="card-body">
+                <h6 class="mb-1">Marina Beach</h6>
+                <p class="rc-muted small mb-1">Chennai</p>
+                <span class="badge bg-info-subtle text-info-emphasis">Sea front</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- My Trips Dashboard -->
+    <section class="py-4">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h5 class="mb-0">My Trips</h5>
+          <span class="rc-muted small" id="rc-trips-count-label">No saved trips yet</span>
+        </div>
+        <div id="rc-trips" class="row g-3"></div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-4">
+      <div class="container text-center rc-muted small">
+        Built for hackathon demos • RouteCraft – Smart travel planning,
+        frontend-only.
+      </div>
+    </footer>
+
+    <!-- Bootstrap & Leaflet JS -->
+    <script
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script src="script.js"></script>
+  </body>
+</html>
+

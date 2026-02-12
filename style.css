@@ -1,0 +1,542 @@
+/* ===========================
+   Global Styles & Theme
+   =========================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top left, #f5f7ff 0, #eef2ff 30%, #f9fafb 100%);
+  color: #0f172a;
+  min-height: 100%;
+}
+
+body.dark-theme {
+  background: radial-gradient(circle at top left, #020617 0, #020617 30%, #020617 100%);
+  color: #e5e7eb;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* ===========================
+   Navbar & Dark Mode
+   =========================== */
+
+.rc-navbar {
+  backdrop-filter: blur(16px);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.rc-navbar .navbar-brand {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.rc-navbar .nav-link,
+.rc-navbar .navbar-brand {
+  color: #e5e7eb !important;
+}
+
+.rc-navbar .nav-link.active {
+  color: #38bdf8 !important;
+}
+
+.rc-navbar .btn-outline-light {
+  border-radius: 999px;
+}
+
+.rc-navbar .rc-user-badge {
+  background: rgba(15, 23, 42, 0.85);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.rc-navbar .rc-user-badge span {
+  max-width: 140px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rc-dark-toggle {
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.85);
+  color: #e5e7eb;
+  padding: 0.25rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+
+body.dark-theme .rc-dark-toggle {
+  background: rgba(15, 23, 42, 1);
+}
+
+/* ===========================
+   Travel Alerts Ticker
+   =========================== */
+
+.rc-ticker-wrapper {
+  background: linear-gradient(90deg, #0f172a, #111827);
+  color: #e5e7eb;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+  overflow: hidden;
+  position: relative;
+}
+
+.rc-ticker-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  opacity: 0.9;
+}
+
+.rc-ticker-track {
+  white-space: nowrap;
+  display: inline-block;
+  animation: rc-ticker-scroll 25s linear infinite;
+}
+
+.rc-ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-right: 2.5rem;
+  font-size: 0.85rem;
+}
+
+@keyframes rc-ticker-scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* ===========================
+   Hero & Glass Card
+   =========================== */
+
+.rc-hero {
+  background: radial-gradient(circle at top left, #22c1c3 0, #4f46e5 30%, #111827 90%);
+  color: #f9fafb;
+  padding: 4.5rem 0 3rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.rc-hero::before,
+.rc-hero::after {
+  content: '';
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(70px);
+  opacity: 0.5;
+}
+
+.rc-hero::before {
+  width: 280px;
+  height: 280px;
+  background: #22c55e;
+  top: -100px;
+  right: 0;
+}
+
+.rc-hero::after {
+  width: 260px;
+  height: 260px;
+  background: #06b6d4;
+  bottom: -120px;
+  left: -60px;
+}
+
+.rc-hero-heading {
+  font-size: clamp(2.2rem, 3vw + 1.2rem, 3.5rem);
+  font-weight: 800;
+  letter-spacing: 0.03em;
+}
+
+.rc-hero-subtitle {
+  font-size: 1.05rem;
+  max-width: 520px;
+  color: rgba(241, 245, 249, 0.9);
+}
+
+.rc-hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.rc-hero-badge {
+  font-size: 0.8rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(12px);
+}
+
+.rc-glass-card {
+  background: rgba(15, 23, 42, 0.78);
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow:
+    0 24px 60px rgba(15, 23, 42, 0.75),
+    0 0 0 1px rgba(15, 23, 42, 0.3);
+  backdrop-filter: blur(20px);
+  padding: 1.75rem 1.5rem;
+}
+
+.rc-glass-card-light {
+  background: rgba(255, 255, 255, 0.82);
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow:
+    0 18px 40px rgba(15, 23, 42, 0.24),
+    0 0 0 1px rgba(15, 23, 42, 0.04);
+  backdrop-filter: blur(22px);
+}
+
+body.dark-theme .rc-glass-card-light {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+.rc-form-label {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+body.dark-theme .rc-form-label {
+  color: #9ca3af;
+}
+
+.rc-pill-group {
+  display: inline-flex;
+  background: rgba(15, 23, 42, 0.05);
+  border-radius: 999px;
+  padding: 0.15rem;
+}
+
+.rc-pill-btn {
+  border-radius: 999px !important;
+  border: 0 !important;
+  font-size: 0.8rem;
+  padding: 0.3rem 0.9rem;
+  color: #4b5563;
+}
+
+.rc-pill-btn.active {
+  background: linear-gradient(90deg, #22c55e, #0ea5e9) !important;
+  color: #f9fafb !important;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.05);
+}
+
+body.dark-theme .rc-pill-group {
+  background: rgba(15, 23, 42, 0.85);
+}
+
+/* ===========================
+   Route Results & Cards
+   =========================== */
+
+.rc-results-layout {
+  margin-top: 2rem;
+  gap: 1.5rem;
+}
+
+.rc-route-card {
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+  cursor: pointer;
+}
+
+.rc-route-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 18px 35px rgba(15, 23, 42, 0.15),
+    0 0 0 1px rgba(59, 130, 246, 0.18);
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.rc-transport-badge {
+  border-radius: 999px;
+  font-size: 0.75rem;
+  padding: 0.25rem 0.65rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.rc-badge-train {
+  background: rgba(59, 130, 246, 0.1);
+  color: #1d4ed8;
+}
+
+.rc-badge-flight {
+  background: rgba(59, 130, 246, 0.1);
+  color: #0369a1;
+}
+
+.rc-badge-cab {
+  background: rgba(250, 204, 21, 0.16);
+  color: #92400e;
+}
+
+.rc-badge-tag {
+  border-radius: 999px;
+  font-size: 0.7rem;
+  padding: 0.18rem 0.55rem;
+  background: rgba(15, 23, 42, 0.04);
+}
+
+.rc-progress {
+  height: 0.5rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background-color: #e5e7eb;
+}
+
+.rc-progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #22c55e, #0ea5e9);
+}
+
+body.dark-theme .rc-route-card {
+  background: #020617;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+body.dark-theme .rc-progress {
+  background-color: #1f2937;
+}
+
+/* ===========================
+   Map
+   =========================== */
+
+#rc-map {
+  width: 100%;
+  min-height: 320px;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow:
+    0 16px 30px rgba(15, 23, 42, 0.26),
+    0 0 0 1px rgba(15, 23, 42, 0.4);
+}
+
+body.dark-theme .leaflet-control-attribution {
+  color: #9ca3af;
+}
+
+/* ===========================
+   Explore Page
+   =========================== */
+
+.rc-section-heading {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.rc-section-subtitle {
+  color: #6b7280;
+  max-width: 520px;
+}
+
+body.dark-theme .rc-section-subtitle {
+  color: #9ca3af;
+}
+
+.rc-explore-card {
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.rc-explore-card img {
+  object-fit: cover;
+  height: 180px;
+}
+
+.rc-explore-card:hover {
+  transform: translateY(-8px);
+  box-shadow:
+    0 20px 40px rgba(15, 23, 42, 0.24),
+    0 0 0 1px rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.6);
+}
+
+body.dark-theme .rc-explore-card {
+  background: #020617;
+  border-color: rgba(148, 163, 184, 0.4);
+}
+
+/* ===========================
+   Auth Pages
+   =========================== */
+
+.rc-auth-layout {
+  min-height: calc(100vh - 72px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.rc-auth-card {
+  max-width: 420px;
+  width: 100%;
+}
+
+.rc-input {
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+}
+
+.rc-input:focus {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+}
+
+.rc-link {
+  color: #2563eb;
+  cursor: pointer;
+}
+
+body.dark-theme .rc-link {
+  color: #60a5fa;
+}
+
+/* ===========================
+   Utilities
+   =========================== */
+
+.rc-fade-in {
+  animation: rc-fade-in 0.4s ease-out;
+}
+
+@keyframes rc-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.rc-muted {
+  color: #9ca3af;
+}
+
+body.dark-theme .rc-muted {
+  color: #6b7280;
+}
+
+/* Personalized plan section */
+
+.rc-personal-plan {
+  border-radius: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  padding: 1.25rem 1.35rem;
+  background: rgba(15, 23, 42, 0.85);
+  color: #e5e7eb;
+}
+
+body:not(.dark-theme) .rc-personal-plan {
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+}
+
+.rc-personal-pill {
+  border-radius: 999px;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.7rem;
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+}
+
+.rc-trips-card {
+  border-radius: 16px;
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+}
+
+.rc-trips-card .badge {
+  font-size: 0.7rem;
+}
+
+/* Route timeline */
+
+.rc-step-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rc-step-item {
+  display: flex;
+  gap: 0.75rem;
+  position: relative;
+  padding-bottom: 0.75rem;
+}
+
+.rc-step-item:last-child {
+  padding-bottom: 0;
+}
+
+.rc-step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  margin-top: 0.3rem;
+  flex-shrink: 0;
+}
+
+.rc-step-line {
+  position: absolute;
+  left: 4px;
+  top: 0.75rem;
+  bottom: -0.1rem;
+  width: 2px;
+  background: rgba(148, 163, 184, 0.6);
+}
+
+.rc-map-sticky {
+  position: sticky;
+  top: 96px;
+}
+
+
